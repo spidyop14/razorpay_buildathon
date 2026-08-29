@@ -243,7 +243,7 @@ export function BuyerFlow() {
 
   return (
     <div className="space-y-7">
-      {!session.selectedProduct && <section className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-900"><p className="font-semibold">Recommended demo</p><p className="mt-1 text-blue-800">Gaming setup under ₹80K → select a product → review a Merchant Agent offer → approve → policy-controlled Razorpay Test Mode payment → Audit Trail.</p></section>}
+      {!session.selectedProduct && <section className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-900"><p className="font-semibold">Recommended success demo (Under ₹50K Limit)</p><p className="mt-1 text-blue-800">Coding laptop under ₹50K → select a product → review a Merchant Agent offer → approve → policy-controlled Razorpay Test Mode payment → Audit Trail.</p><p className="mt-2 text-xs font-semibold text-rose-700">Failure demo (Over Limit): Try &quot;Gaming setup under ₹80K&quot; to test Razorpay Test Mode rejection handling.</p></section>}
       <div className="grid gap-6 xl:grid-cols-[1.5fr_.75fr]">
         <section className="rounded-xl border border-zinc-200 bg-white p-5 md:p-7">
           <label htmlFor="request" className="text-sm font-semibold">
@@ -254,11 +254,11 @@ export function BuyerFlow() {
             value={request}
             onChange={(e) => setRequest(e.target.value)}
             className="mt-3 min-h-32 w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm outline-none focus:border-blue-400 focus:ring-3 focus:ring-blue-50"
-            placeholder="Find me a coding laptop under ₹60,000 with 16GB RAM"
+            placeholder="Find me a coding laptop under ₹50,000 with 16GB RAM"
           />
           <div className="mt-4 flex flex-wrap gap-2">
             {[
-              "Coding laptop under ₹60K",
+              "Coding laptop under ₹50K",
               "Gaming setup under ₹80K",
               "Travel headphones under ₹5K",
             ].map((x) => (
