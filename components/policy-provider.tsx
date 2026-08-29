@@ -42,6 +42,7 @@ type Value = {
   setSessionUserApproved: (approved: boolean) => void;
   setTransactionPhase: (phase: TransactionPhase) => void;
   setSessionIntent: (intent?: Intent, query?: string) => void;
+  completeDiscovery: (intent: Intent, query: string, step: number) => void;
 };
 
 const Context = createContext<Value | undefined>(undefined);
@@ -72,7 +73,11 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     try {
       const s = JSON.parse(localStorage.getItem("ac-session") || "null");
-      setSessionState(restoreCommerceSession(s));
+      // Do not clobber a discovery that already started in this mount.
+      setSessionState((current) => {
+        if (current.intent || current.step >= 0 || current.selectedProduct) return current;
+        return restoreCommerceSession(s);
+      });
     } catch {}
   }, []);
 
@@ -84,12 +89,17 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
       .catch(() => undefined);
   }, []);
 
+  const persistSession = (next: CommerceSession) => {
+    localStorage.setItem("ac-session", JSON.stringify(serializeCommerceSession(next)));
+    return next;
+  };
+
   const persist = (next: CommerceSession) => {
-    setSessionState(next);
-    localStorage.setItem(
-      "ac-session",
-      JSON.stringify(serializeCommerceSession(next))
-    );
+    setSessionState(persistSession(next));
+  };
+
+  const persistWith = (updater: (prev: CommerceSession) => CommerceSession) => {
+    setSessionState((prev) => persistSession(updater(prev)));
   };
 
   const setPolicies = (p: PolicyConfig) => {
@@ -141,8 +151,7 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const startNewSession = () => {
-    const next = emptySession();
-    persist(next);
+    persistWith(() => emptySession());
     record({
       actor: "System",
       action: "New commerce session started",
@@ -160,10 +169,15 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setSessionExtras = (extras: string[]) =>
-    persist({ ...session, extras, userApproved: false, transactionPhase: "PRODUCT_SELECTED", revision: session.revision + 1 });
+    persistWith((prev) => ({
+      ...prev,
+      extras,
+      userApproved: false,
+      transactionPhase: "PRODUCT_SELECTED",
+      revision: prev.revision + 1,
+    }));
 
-  const setSessionStep = (step: number) =>
-    persist({ ...session, step });
+  const setSessionStep = (step: number) => persistWith((prev) => ({ ...prev, step }));
 
   const setSessionUserApproved = (approved: boolean) => {
     const checked = session.transactionPhase === "PRODUCT_SELECTED" ? transitionCommerceSession(session, "POLICY_CHECKED") : session;
@@ -176,11 +190,19 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setSessionIntent = (intent?: Intent, query?: string) =>
-    persist({
-      ...session,
+    persistWith((prev) => ({
+      ...prev,
       intent,
-      buyerQuery: query ?? session.buyerQuery,
-    });
+      buyerQuery: query ?? prev.buyerQuery,
+    }));
+
+  const completeDiscovery = (intent: Intent, query: string, step: number) =>
+    persistWith((prev) => ({
+      ...prev,
+      intent,
+      buyerQuery: query,
+      step,
+    }));
 
   return (
     <Context.Provider
@@ -201,6 +223,7 @@ export function PolicyProvider({ children }: { children: React.ReactNode }) {
         setSessionUserApproved,
         setTransactionPhase,
         setSessionIntent,
+        completeDiscovery,
       }}
     >
       {children}

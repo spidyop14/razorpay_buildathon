@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Check, CircleAlert, LoaderCircle, PackageCheck, Search, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buildOfferPreview, getRelatedProducts, parseBuyerRequest, searchCatalog, type Intent, type Recommendation } from "../lib/buyer";
+import { buildOfferPreview, getRelatedProducts, parseBuyerRequest, searchCatalog, shouldShowNoMatch, type Intent, type Recommendation } from "../lib/buyer";
 import { getProduct, type Product } from "../lib/catalog";
 import { evaluateTransaction } from "../lib/policy/policy-engine";
 import { usePolicies } from "./policy-provider";
@@ -116,7 +116,7 @@ export function BuyerFlow() {
     setSessionExtras,
     setSessionStep,
     setSessionUserApproved,
-    setSessionIntent,
+    completeDiscovery,
     startNewSession,
     resetDemo,
     setTransactionPhase,
@@ -190,18 +190,16 @@ export function BuyerFlow() {
       setMode(data.mode || "fallback");
       setNotice(data.notice || "");
       setHistory((x) => [...x, request].slice(-4));
-      setSessionIntent(data.intent, request);
+      completeDiscovery(data.intent, request, data.intent.clarificationNeeded ? 1 : 5);
       record({ actor: "AI Buyer", action: "Buyer intent extracted", amount: data.intent.maxBudget ? money(data.intent.maxBudget) : "—", policy: data.mode === "ai" ? "Structured AI output" : "Deterministic fallback", result: "Allowed" });
-      setSessionStep(data.intent.clarificationNeeded ? 1 : 5);
     } catch {
       const fallback = parseBuyerRequest(request);
       setMode("fallback");
       setNotice(
         "AI understanding is temporarily unavailable. We used the local commerce parser, so your catalog results are still available."
       );
-      setSessionIntent(fallback, request);
+      completeDiscovery(fallback, request, 5);
       record({ actor: "AI Buyer", action: "Buyer intent extracted", amount: fallback.maxBudget ? money(fallback.maxBudget) : "—", policy: "Deterministic fallback", result: "Allowed" });
-      setSessionStep(5);
     }
   }
 
@@ -384,7 +382,7 @@ export function BuyerFlow() {
         </section>
       )}
 
-      {step === 5 && !intent?.clarificationNeeded && !results.length && (
+      {shouldShowNoMatch(step, intent, results) && (
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
           <h3 className="font-semibold">No exact match found</h3>
           <p className="mt-1 text-sm text-zinc-600">

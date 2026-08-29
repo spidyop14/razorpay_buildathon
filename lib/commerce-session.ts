@@ -101,6 +101,7 @@ export function serializeCommerceSession(session: CommerceSession) {
     createdAt: session.createdAt,
     expiresAt: session.expiresAt,
     selectedProductId: session.selectedProduct?.id,
+    buyerQuery: session.buyerQuery,
     intent: session.intent,
     activeOpportunityId: session.activeOpportunityId,
     statuses: session.opportunities.map((x) => ({ id: x.id, status: x.status })),
@@ -125,6 +126,7 @@ export function restoreCommerceSession(value: unknown): CommerceSession {
     createdAt?: unknown;
     expiresAt?: unknown;
     selectedProductId?: unknown;
+    buyerQuery?: unknown;
     intent?: unknown;
     activeOpportunityId?: unknown;
     statuses?: unknown;
@@ -138,16 +140,35 @@ export function restoreCommerceSession(value: unknown): CommerceSession {
   // Reject expired sessions
   if (typeof raw.expiresAt !== "number" || raw.expiresAt < Date.now()) return emptySession();
 
-  // If no selected product, return a minimal restored session preserving non-product state
-  if (typeof raw.selectedProductId !== "string") return emptySession();
+  const intent =
+    raw.intent && typeof raw.intent === "object" ? (raw.intent as Intent) : undefined;
+  const buyerQuery = typeof raw.buyerQuery === "string" ? raw.buyerQuery : intent?.raw;
+  const step = typeof raw.step === "number" && Number.isInteger(raw.step) ? raw.step : -1;
+  const revision =
+    typeof raw.revision === "number" && Number.isInteger(raw.revision) && raw.revision >= 0
+      ? raw.revision
+      : 0;
+
+  // Discovery can complete before a product is selected. Keep intent/step so catalog
+  // results survive hydration restore. Do not invent a selected product.
+  if (typeof raw.selectedProductId !== "string") {
+    return {
+      ...emptySession(),
+      sessionId: typeof raw.sessionId === "string" ? raw.sessionId : emptySession().sessionId,
+      createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
+      expiresAt: raw.expiresAt,
+      buyerQuery,
+      intent,
+      extras: [],
+      step,
+      userApproved: false,
+      transactionPhase: "IDLE",
+      revision,
+    };
+  }
 
   const product = getProduct(raw.selectedProductId);
   if (!product) return emptySession();
-
-  const intent =
-    raw.intent && typeof raw.intent === "object"
-      ? (raw.intent as Intent)
-      : undefined;
 
   // Validate extras: only keep IDs that resolve to real products
   let extras: string[] = [];
@@ -157,7 +178,6 @@ export function restoreCommerceSession(value: unknown): CommerceSession {
     );
   }
 
-  const step = typeof raw.step === "number" && Number.isInteger(raw.step) ? raw.step : -1;
   const userApproved = raw.userApproved === true;
 
   let transactionPhase: TransactionPhase = "PRODUCT_SELECTED";
@@ -178,11 +198,12 @@ export function restoreCommerceSession(value: unknown): CommerceSession {
     sessionId: typeof raw.sessionId === "string" ? raw.sessionId : emptySession().sessionId,
     createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
     expiresAt: raw.expiresAt,
+    buyerQuery,
     extras,
     step,
     userApproved,
     transactionPhase,
-    revision: typeof raw.revision === "number" && Number.isInteger(raw.revision) && raw.revision >= 0 ? raw.revision : 0,
+    revision,
   };
 
   // Restore opportunity statuses

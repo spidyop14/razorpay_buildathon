@@ -5,7 +5,10 @@ import type { TransactionPhase } from "../lib/commerce-session";
 
 declare global {
   interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+    Razorpay?: new (options: Record<string, unknown>) => { 
+      open: () => void;
+      on: (event: string, handler: (response: any) => void) => void;
+    };
   }
 }
 
@@ -183,6 +186,26 @@ export function RazorpayPayment({
             onEvent("Payment verification failed", "Blocked", "—");
           }
         },
+      });
+
+      checkout.on("payment.failed", async (response: any) => {
+        setStatus("failed");
+        const reason = response.error ? response.error.description : "Razorpay Test Mode rejected this payment";
+        setMessage(reason);
+        onEvent("Razorpay rejected payment", "Blocked", `₹${(order.amount / 100).toLocaleString("en-IN")}`);
+        onPhase("PAYMENT_FAILED");
+        try {
+          const failRes = await fetch("/api/payment/fail", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transactionId: quote.transactionId, reason }),
+          });
+          const failData = await failRes.json();
+          setRetryAllowed(Boolean(failData.retryAllowed));
+          setRetryCount(failData.retryCount || 0);
+        } catch (e) {
+          // ignore
+        }
       });
 
       checkout.open();
