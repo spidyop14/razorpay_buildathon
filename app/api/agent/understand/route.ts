@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";
+import { understandBuyerRequest } from "../../../../lib/ai/service";
+export async function POST(request:Request){try{const body=await request.json() as {message?:unknown;history?:unknown};if(typeof body.message!=="string"||!body.message.trim()||body.message.length>1200)return NextResponse.json({error:"Please provide a short shopping request."},{status:400});const history=Array.isArray(body.history)?body.history.filter((x):x is string=>typeof x==="string").slice(-4):[];const result=await understandBuyerRequest(body.message.trim(),history);return NextResponse.json(result)}catch{return NextResponse.json({error:"We couldn't understand that request. Please try again."},{status:500})}}
