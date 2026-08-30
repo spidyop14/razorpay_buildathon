@@ -94,20 +94,20 @@ function Sidebar({ open, close }: { open: boolean; close: () => void }) {
             <X size={19} />
           </button>
         </div>
-        <nav className="space-y-1">
+        <nav className="space-y-1.5 px-2">
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
               onClick={close}
               key={href}
               href={href}
               className={cx(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 path === href
-                  ? "bg-blue-50 text-blue-700 font-semibold"
+                  ? "bg-blue-50/80 text-blue-700 font-semibold shadow-sm"
                   : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
               )}
             >
-              <Icon size={18} />
+              <Icon size={18} className={cx("transition-colors", path === href ? "text-blue-600" : "text-zinc-400 group-hover:text-zinc-600")} />
               {label}
             </Link>
           ))}
@@ -150,8 +150,8 @@ function Shell({
   return (
     <div>
       <Sidebar open={open} close={() => setOpen(false)} />
-      <main className="min-h-screen lg:ml-72">
-        <header className="sticky top-0 z-20 flex h-18 items-center justify-between border-b border-zinc-200 bg-white/90 px-5 backdrop-blur md:px-8">
+      <main className="min-h-screen lg:ml-72 bg-[#fcfcfc]">
+        <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-zinc-200 bg-white/90 px-5 backdrop-blur-md md:px-8">
           <button
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
@@ -160,28 +160,35 @@ function Shell({
             <Menu size={20} />
           </button>
           <div className="hidden lg:block">
-            <h1 className="text-sm font-semibold">{title}</h1>
+            <h1 className="text-sm font-semibold text-zinc-900">{title}</h1>
             <p className="mt-0.5 text-xs text-zinc-500">{description}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={resetDemo}
               title="Reset commerce session, audit logs, and approval states"
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+              className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-zinc-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
             >
               <RotateCcw size={13} />
               Reset Demo
             </button>
-            <Badge tone="green">● Test Mode</Badge>
-            <button aria-label="Notifications" className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100">
+            <Badge tone="green">
+              <span className="relative flex h-2 w-2 mr-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Test Mode
+            </Badge>
+            <div className="h-6 w-px bg-zinc-200"></div>
+            <button aria-label="Notifications" className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100 transition-colors">
               <Bell size={18} />
             </button>
-            <span className="grid size-8 place-items-center rounded-full bg-zinc-900 text-xs font-bold text-white">
+            <span className="grid size-8 place-items-center rounded-full bg-blue-600 text-[13px] font-bold text-white shadow-sm ring-2 ring-white cursor-pointer hover:bg-blue-700 transition">
               S
             </span>
           </div>
         </header>
-        <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-10">
+        <div className="mx-auto max-w-[1200px] px-5 py-8 md:px-8 md:py-10">
           <div className="mb-8 lg:hidden">
             <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
             <p className="mt-1 text-sm text-zinc-500">{description}</p>
@@ -203,17 +210,17 @@ function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-blue-600">
+    <div className="mb-8 flex flex-col items-start">
+      <div className="flex items-center gap-1.5 rounded-full bg-blue-50/50 px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-blue-600 border border-blue-100/50">
         {eyebrow && (
           <>
-            <Sparkles size={14} />
+            <Sparkles size={13} className="text-blue-500" />
             {eyebrow}
           </>
         )}
       </div>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{title}</h2>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">{description}</p>
+      <h2 className="mt-4 text-[36px] leading-[1.1] font-bold tracking-tight text-zinc-900 md:text-[40px]">{title}</h2>
+      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-500 md:text-[16px]">{description}</p>
     </div>
   );
 }

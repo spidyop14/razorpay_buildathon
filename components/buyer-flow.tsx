@@ -19,12 +19,24 @@ const steps = [
 ];
 
 const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-const photo = (category: string) =>
-  category.includes("laptop")
-    ? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=80"
-    : category === "headphones"
+const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+const LAPTOP_IMAGES = [
+  "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=700&q=80",
+  "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=700&q=80",
+];
+
+const photo = (category: string, id?: string) => {
+  if (category.includes("laptop")) {
+    if (!id) return LAPTOP_IMAGES[0];
+    const index = Array.from(id).reduce((acc, char) => acc + char.charCodeAt(0), 0) % LAPTOP_IMAGES.length;
+    return LAPTOP_IMAGES[index];
+  }
+  return category === "headphones"
     ? "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=80"
     : "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=700&q=80";
+};
 
 function PolicyGate({
   evaluation,
@@ -243,86 +255,131 @@ export function BuyerFlow() {
 
   return (
     <div className="space-y-7">
-      {!session.selectedProduct && <section className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-900"><p className="font-semibold">Recommended success demo (Under ₹50K Limit)</p><p className="mt-1 text-blue-800">Coding laptop under ₹50K → select a product → review a Merchant Agent offer → approve → policy-controlled Razorpay Test Mode payment → Audit Trail.</p><p className="mt-2 text-xs font-semibold text-rose-700">Failure demo (Over Limit): Try &quot;Gaming setup under ₹80K&quot; to test Razorpay Test Mode rejection handling.</p></section>}
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_.75fr]">
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 md:p-7">
-          <label htmlFor="request" className="text-sm font-semibold">
-            What are you looking for?
-          </label>
-          <textarea
-            id="request"
-            value={request}
-            onChange={(e) => setRequest(e.target.value)}
-            className="mt-3 min-h-32 w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm outline-none focus:border-blue-400 focus:ring-3 focus:ring-blue-50"
-            placeholder="Find me a coding laptop under ₹50,000 with 16GB RAM"
-          />
-          <div className="mt-4 flex flex-wrap gap-2">
-            {[
-              "Coding laptop under ₹50K",
-              "Gaming setup under ₹80K",
-              "Travel headphones under ₹5K",
-            ].map((x) => (
-              <button
-                onClick={() => setRequest(x)}
-                key={x}
-                className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:border-blue-200 hover:text-blue-700"
-              >
-                {x}
-              </button>
-            ))}
+      {!session.selectedProduct && (
+        <section className="rounded-xl border border-blue-200/50 bg-blue-50/40 p-5 text-sm text-blue-900 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1 space-y-1.5">
+              <p className="font-semibold text-blue-800">Recommended success demo (Under ₹50K Limit)</p>
+              <p className="text-blue-700/90 leading-relaxed">Coding laptop under ₹50K → select a product → review a Merchant Agent offer → approve → policy-controlled Razorpay Test Mode payment → Audit Trail.</p>
+            </div>
+            <div className="flex-1 space-y-1.5 border-t border-blue-100 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+              <p className="font-semibold text-rose-700">Failure demo (Over Limit)</p>
+              <p className="text-rose-700/80 leading-relaxed">Try &quot;Gaming setup under ₹80K&quot; to test Razorpay Test Mode rejection handling.</p>
+            </div>
           </div>
-          {error && (
-            <p className="mt-4 flex gap-2 text-sm text-rose-600">
-              <CircleAlert size={16} />
-              {error}
-            </p>
-          )}
-          <div className="mt-6 flex justify-end">
-            {session.selectedProduct && <button onClick={() => { resetDemo(); setRequest(""); setError(""); setNotice(""); setExplanation(""); }} className="mr-auto rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50">Reset demo</button>}
+        </section>
+      )}
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_.75fr]">
+        <section className="flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-6 md:p-8 shadow-sm">
+          <div>
+            <label htmlFor="request" className="text-[15px] font-semibold text-zinc-900">
+              What are you looking for?
+            </label>
+            <textarea
+              id="request"
+              value={request}
+              onChange={(e) => setRequest(e.target.value)}
+              className="mt-4 min-h-[140px] w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 text-[15px] leading-relaxed text-zinc-800 outline-none transition-all placeholder:text-zinc-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50"
+              placeholder="e.g. Find me a coding laptop under ₹50,000 with 16GB RAM"
+            />
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              {[
+                "Coding laptop under ₹50K",
+                "Gaming setup under ₹80K",
+                "Travel headphones under ₹5K",
+              ].map((x) => (
+                <button
+                  onClick={() => setRequest(x)}
+                  key={x}
+                  className="rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-[13px] font-medium text-zinc-600 shadow-sm transition-all hover:border-blue-200 hover:text-blue-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-50"
+                >
+                  {x}
+                </button>
+              ))}
+            </div>
+            {error && (
+              <p className="mt-5 flex items-center gap-2 text-[13px] font-medium text-rose-600">
+                <CircleAlert size={16} />
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="mt-8 flex items-center justify-between border-t border-zinc-100 pt-6">
+            {session.selectedProduct ? (
+              <button onClick={() => { resetDemo(); setRequest(""); setError(""); setNotice(""); setExplanation(""); }} className="rounded-lg px-4 py-2.5 text-[14px] font-semibold text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800">
+                Clear selection
+              </button>
+            ) : <div />}
             <button
               onClick={discover}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              disabled={step > -1 && step < 5}
+              className="group relative flex items-center gap-2.5 overflow-hidden rounded-xl bg-blue-600 px-6 py-3 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
             >
-              <Search size={16} />
-              Start discovery
+              {step > -1 && step < 5 ? (
+                <>
+                  <LoaderCircle size={18} className="animate-spin" />
+                  Discovering...
+                </>
+              ) : (
+                <>
+                  <Search size={18} className="transition-transform group-hover:scale-110" />
+                  Start discovery
+                </>
+              )}
             </button>
           </div>
         </section>
-        <aside className="rounded-xl border border-zinc-200 bg-white p-5">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-blue-600" />
-            <h3 className="font-semibold">Agent Activity</h3>
+        <aside className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm flex flex-col">
+          <div className="flex items-center gap-3 border-b border-zinc-100 pb-4">
+            <div className="grid size-9 place-items-center rounded-lg bg-blue-50 text-blue-600">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-900">Agent Activity</h3>
+              <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mt-0.5">
+                {mode === "ai" ? "Gemini AI Agent" : "Deterministic fallback"}
+              </p>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
-            Demo Catalog · {mode === "ai" ? "Gemini AI Agent" : "Gemini unavailable · Deterministic fallback"}
-          </p>
-          <div className="mt-5 space-y-3">
-            {steps.map((label, index) => (
-              <div className="flex items-center gap-3" key={label}>
-                {step >= index ? (
-                  <span className="grid size-5 place-items-center rounded-full bg-emerald-500 text-white">
-                    <Check size={12} />
+          <div className="mt-6 flex-1 space-y-5">
+            {steps.map((label, index) => {
+              const isActive = step === index - 1;
+              const isCompleted = step >= index;
+              const isPending = step < index - 1;
+              
+              return (
+                <div className="flex items-center gap-3.5 transition-opacity duration-300" key={label} style={{ opacity: isPending ? 0.5 : 1 }}>
+                  {isCompleted ? (
+                    <span className="grid size-6 place-items-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-200">
+                      <Check size={12} className="stroke-[3]" />
+                    </span>
+                  ) : isActive ? (
+                    <span className="relative grid size-6 place-items-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-20"></span>
+                      <LoaderCircle className="animate-spin text-blue-600" size={16} />
+                    </span>
+                  ) : (
+                    <span className="size-6 rounded-full border-2 border-zinc-200 bg-zinc-50" />
+                  )}
+                  <span className={cx("text-[14px] font-medium transition-colors", isActive ? "text-blue-700" : isCompleted ? "text-zinc-900" : "text-zinc-500")}>
+                    {label}
                   </span>
-                ) : step === index - 1 ? (
-                  <LoaderCircle className="animate-spin text-blue-600" size={18} />
-                ) : (
-                  <span className="size-5 rounded-full border border-zinc-200" />
-                )}
-                <span className={step >= index ? "text-sm text-zinc-700" : "text-sm text-zinc-400"}>
-                  {label}
-                </span>
-              </div>
-            ))}
-            {intent && (
-              <p className="border-t border-zinc-100 pt-4 text-xs font-semibold text-emerald-600">
+                </div>
+              );
+            })}
+          </div>
+          {intent && (
+            <div className="mt-6 rounded-xl bg-emerald-50/50 p-4 border border-emerald-100/50">
+              <p className="flex items-center gap-2 text-[13px] font-semibold text-emerald-700">
+                <Check size={16} />
                 {results.length
                   ? `${results.length} verified matches · Discovery complete`
                   : intent.clarificationNeeded
                   ? "Clarification needed"
-                  : ""}
+                  : "No matches found"}
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </aside>
       </div>
 
@@ -392,57 +449,71 @@ export function BuyerFlow() {
       )}
 
       {results.length > 0 && !selected && (
-        <section>
-          <div className="mb-4">
-            <h3 className="text-xl font-bold">Top recommendations</h3>
-            <p className="mt-1 text-sm text-zinc-500">
-              Verified catalog matches, ranked deterministically from the structured intent.
-            </p>
+        <section className="mt-10">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-100 pb-5">
+            <div>
+              <h3 className="text-2xl font-bold text-zinc-900">Top recommendations</h3>
+              <p className="mt-1.5 text-[15px] text-zinc-500">
+                Verified catalog matches, ranked deterministically from the structured intent.
+              </p>
+            </div>
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3">
             {results.slice(0, 3).map((r) => (
               <article
                 key={r.product.id}
-                className="overflow-hidden rounded-xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
               >
-                <div className="relative h-36 overflow-hidden bg-zinc-100">
-                  <img src={photo(r.product.category)} alt="" className="h-full w-full object-cover" />
-                  <span className="absolute right-3 top-3 rounded-full bg-zinc-900 px-2.5 py-1 text-xs font-bold text-white">
+                <div className="relative h-48 w-full overflow-hidden bg-zinc-100">
+                  <img src={photo(r.product.category, r.product.id)} alt={r.product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-zinc-900/90 backdrop-blur-md px-3 py-1.5 text-[11px] font-bold tracking-wide text-white shadow-sm ring-1 ring-white/20">
+                    <Sparkles size={12} className="text-blue-300" />
                     {r.matchScore}% AI MATCH
                   </span>
                 </div>
-                <div className="p-5">
-                  <p className="text-xs font-semibold text-zinc-500">{r.product.brand}</p>
-                  <h4 className="mt-1 font-semibold">{r.product.name}</h4>
-                  <div className="mt-3 flex justify-between">
-                    <p className="text-xl font-bold">{money(r.product.price)}</p>
-                    <span className="text-xs text-amber-600">
-                      ★ {r.product.rating} ({r.product.reviewCount})
-                    </span>
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-zinc-500">{r.product.brand}</p>
+                      <h4 className="mt-1 text-[17px] font-bold text-zinc-900 leading-tight">{r.product.name}</h4>
+                    </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-2xl font-bold text-zinc-900 tracking-tight">{money(r.product.price)}</p>
+                    <div className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[12px] font-bold text-amber-700">
+                      ★ {r.product.rating} <span className="font-medium opacity-70">({r.product.reviewCount})</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex flex-wrap gap-1.5">
                     {Object.values(r.product.specifications)
                       .slice(0, 3)
                       .map((x) => (
-                        <span key={x} className="rounded bg-zinc-100 px-2 py-1 text-[11px] text-zinc-600">
+                        <span key={x} className="rounded-md bg-zinc-100/80 px-2 py-1 text-[12px] font-medium text-zinc-700">
                           {x}
                         </span>
                       ))}
                   </div>
-                  <p className="mt-4 text-xs font-semibold">Why this matches</p>
-                  <ul className="mt-2 space-y-1">
-                    {r.reasons.slice(0, 3).map((x) => (
-                      <li key={x} className="flex gap-1.5 text-xs text-zinc-500">
-                        <Check size={13} className="shrink-0 text-emerald-600" />
-                        {x}
-                      </li>
-                    ))}
-                  </ul>
+                  
+                  <div className="mt-6 flex-1">
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-zinc-500 mb-3">Why this matches</p>
+                    <ul className="space-y-2">
+                      {r.reasons.slice(0, 3).map((x) => (
+                        <li key={x} className="flex items-start gap-2 text-[13px] text-zinc-600 leading-relaxed">
+                          <Check size={15} className="mt-0.5 shrink-0 text-emerald-500" />
+                          {x}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
                   <button
                     onClick={() => select(r)}
-                    className="mt-5 w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                    className="mt-7 w-full rounded-xl bg-zinc-900 py-3 text-[14px] font-semibold text-white transition-all hover:bg-zinc-800 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-zinc-200"
                   >
-                    Select
+                    Select product
                   </button>
                 </div>
               </article>
@@ -582,15 +653,16 @@ export function BuyerFlow() {
         </section>
       )}
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6">
-        <h3 className="font-semibold">How it works</h3>
-        <div className="mt-5 grid gap-4 sm:grid-cols-5">
+      <section className="rounded-2xl border border-zinc-200 bg-white p-8 mt-4 shadow-sm">
+        <h3 className="font-bold text-zinc-900 text-lg">How it works</h3>
+        <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-0">
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-zinc-100 hidden md:block -translate-y-1/2 -z-10"></div>
           {["Understand", "Discover", "Evaluate", "Approve", "Transact"].map((x, i) => (
-            <div key={x}>
-              <span className="grid size-8 place-items-center rounded-lg bg-zinc-100 text-xs font-bold text-zinc-600">
+            <div key={x} className="flex md:flex-col items-center gap-4 md:gap-3 bg-white px-2">
+              <span className="grid size-10 place-items-center rounded-xl bg-zinc-50 text-[13px] font-bold text-zinc-500 border border-zinc-200 shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200">
                 0{i + 1}
               </span>
-              <p className="mt-2 text-sm font-semibold">{x}</p>
+              <p className="text-[14px] font-semibold text-zinc-800">{x}</p>
             </div>
           ))}
         </div>
